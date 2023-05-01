@@ -1,14 +1,142 @@
-\documentclass{article}
+%!TEX program = xelatex -shell-escape
+\documentclass[a4paper,12pt]{report}
+\usepackage[margin=2.5cm]{geometry}
 \usepackage{graphicx} % Required for inserting images
+\usepackage{minted}
+\usepackage{amsmath,amsfonts}
+\newtheorem{definition}[chapter]{Definition}
 
-\title{adjoint_notes}
+\title{How do you solve a problem like the adjoint}
 \author{David Ham}
-\date{April 2023}
+\date{May 2023}
 
 \begin{document}
 
 \maketitle
 
-\section{Introduction}
+\chapter{Functional setting}
+
+\section{Parametrised multilinear forms}
+
+Let $W_0\ldots W_{l-1}$, $V_0\ldots V_{k-1}$ be Hilbert spaces. The key examples of
+such spaces to have in mind are $\mathbb{R}^d$ for positive integer $d$, and
+(usually finite-dimensional) subspaces of the Sobolev spaces $L^2$, $H^n$,
+$H(\operatorname{div})$ and $H(\operatorname{curl})$, defined over some
+suitable domain $\Omega$.
+
+\begin{definition}{Parametrised multilinear from}
+    A $k$-linear form parametrised by $l$ coefficients is a function:
+    \[
+      f: W_{l-1} \times \ldots \times W_{0}; V_{k-1}\ldots V_{0} \rightarrow \mathbb{R}
+    \]
+    such that $f$ is constrained to be linear in the parameters corresponding
+    to the $k$ spaces labelled $V$, but may be non-linear in the $l$ spaces
+    labelled $W$. We call the parameters corresponding to the spaces labelled
+    $V$ \emph{arguments}; and the parameters corresponding to the spaces
+    labelled $W$ \emph{parameters}. 
+\end{definition}
+We further assume that at the point the problem is posed, the coefficients have
+known values, while the value of the arguments is unknown.
+
+As an example, consider the following finite element problem. 
+Given $\nu\in W_0$, $f\in \hat{W}_0$, find $u \in V$ such that:
+\begin{equation}
+    \int_\Omega \nu\nabla u \cdot \nabla v\ \mathrm{d}x = 
+    \int_\Omega f v\ \mathrm{d}x\qquad \forall v \in V
+\end{equation}
+
+The LHS of this problem is a bilinear form parametrised by 1 coefficient, given
+by:
+\begin{equation}
+    a(\nu; u, v) = \int_\Omega \nu\nabla u \cdot \nabla v\ \mathrm{d}x
+\end{equation}
+while the RHS is a linear form parametrised by 1 coefficient, given by:
+\begin{equation}
+    L(f, v) = \int_\Omega fv\ \mathrm{d}x
+\end{equation}
+
+We conventionally write the lowest numbered argument last, so the test function
+is argument 0 in each of these forms, while the trial function in the bilinear
+form is argument 1, and the arguments are separated from the coefficients by a
+semicolon.
+
+\section{Gateaux Derivatives}
+
+\begin{definition}{Gateaux derivative}
+    Let $F: W_0\times \ldots \times W_{l-1}; V_0\ldots
+    V_{k-1}:\rightarrow\mathbb{R}$ be a $k$-form parametrised by $l$
+    coefficients. The \emph{Gateaux derivative} of $F$ with respect to the
+    $m$-th coefficient $w_m$ is the $k+1$-form, $F: W_0\times \ldots \times
+    W_{l-1}; W_m \times V_0\ldots V_{k-1}:\rightarrow\mathbb{R}$
+\end{definition}
+
+\chapter{Reverse mode algorithmic differentiation}
+
+
+\section{Algorithms and computer programs}
+
+Algorithmic differentiation computes the derivative of a computer program with
+respect to one or more of its inputs. It does so by capturing the underlying
+algorithm and working backwards through the algorithm to compute the
+derivative. We therefore need to start by understanding the relationship
+between a program and its underlying variables.
+
+Consider the following very simple Firedrake program:
+\begin{listing}
+    \inputminted[linenos]{python3}{examples/assembly.py}
+    \caption{Firedrake code for a simple calculation and its gradient}
+    \label{lst:assembly_code}
+\end{listing}
+
+This program computes the value $J$ via several intermediate calculations. It
+then computes the derivative of $J$ with respect to the Firedrake function $f$.
+
+At this stage we're not solving any PDEs, so we can duck that complication. Our
+objective is to understand what this calculation means, what we mean by this
+derivative, and how it's computed. We start by trying to understand the
+computation.
+
+\begin{figure}
+    \includegraphics*[width=\textwidth]{examples/assembly.pdf}
+    \caption{A Directed Acyclic Graph corresponding to the computation shown in
+    listing \ref{lst:assembly_code}}. The variables \mintinline{python}+f+ and
+    \mintinline{python}+g+ are shown as $w_4$ and $w_2$ respectively.
+    \label{fig:assembly_dag}
+\end{figure}
+
+One way to think about the computation is as a Directed Acyclic Graph, as shown
+in \ref{fig:assembly_dag}. This graph shows each computational operation as a
+square box, and the values that are computed as ovals. There is a lot we can
+already observe from this graph:
+
+\begin{enumerate}
+    \item Arrows connect operations to the values that are their inputs and
+    outputs.
+    \item Consequently, each arrow joins exactly one box and one oval.
+    \item The same value of $f$ ($w_2$) is used twice, and hence the oval
+    labelled $w_2$ is the source of two arrows.
+    \item Conversely, changing the value of $g$ ($w_4$) produced a new oval,
+    also labelled $w_4$.
+\end{enumerate}
+
+This last point uncovers a fundamental distinction between a computer program
+in an imperative language such as Python, and a mathematical algorithm: some
+computer program variables are mutable, their value can change during program
+execution. Conversely, the variables of a mathematical algorithm are immutable:
+their value does not change. Operations which would change a variable's value
+instead create a new value. This is what happens here. The code:
+
+\begin{minted}{python3}
+    g.assign(2.0)
+\end{minted}
+
+changes the value of the Firedrake function $g$, but creates a new variable
+(oval) in the DAG.
+
+\section{Blocks and block variables}
+
+
+We will adopt the terminology employed by pyadjoint, the library which provides
+Firedrake's adjoint, to define the variables and operations in an algorithm.
 
 \end{document}
