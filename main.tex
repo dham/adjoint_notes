@@ -67,8 +67,21 @@ semicolon.
     V_{k-1}:\rightarrow\mathbb{R}$ be a $k$-form parametrised by $l$
     coefficients. The \emph{Gateaux derivative} of $F$ with respect to the
     $m$-th coefficient $w_m$ is the $k+1$-form, $F: W_0\times \ldots \times
-    W_{l-1}; W_m \times V_0\ldots V_{k-1}:\rightarrow\mathbb{R}$
+    W_{l-1}; W_m \times V_0\ldots V_{k-1}:\rightarrow\mathbb{R}$ given by:
+    \[
+        \frac{\partial f}{\partial w_m}(w_{l-1},\ldots,w_{0}; \hat{w}, v_k, \ldots v_0)
+        = \lim_{\epsilon\rightarrow 0} \frac{
+            f(w_{l-1},\ldots w_m + \epsilon \hat{w} \ldots w_0; \ldots)
+            - f(w_{l-1},\ldots w_m \ldots w_0; \ldots)
+        }{\epsilon}
+    \]
 \end{definition}
+
+In simple cases this reduces to the definition of grad that you already know
+from undergraduate vector calculus. For example, if $f: \mathbb{R}^2;\rightarrow R$
+\begin{equation}
+    nn
+\end{equation}
 
 \chapter{Reverse mode algorithmic differentiation}
 
